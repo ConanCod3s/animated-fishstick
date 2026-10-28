@@ -135,6 +135,14 @@ The backend folder contains the backend workspace and its formatting configurati
 - Ensure AI integration does not interfere with normal application functions.
 - Deliver the AI integration strategy in coordination with the architecture and interface contracts.
 
+### Ronnie Allen — Interface Designer and API Contracts
+
+- Define how application components communicate.
+- Specify API endpoints such as `GET /api/tanks`.
+- Define JSON request and response formats.
+- Document component methods, data types, validation rules, and error handling.
+- Deliver the interface contracts and data structures.
+
 All team members peer-review the documentation, architecture, code, and final product to keep them aligned.
 
 
