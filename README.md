@@ -89,6 +89,7 @@ AI output is informational and does not replace aquarium-specific guidance.
 From the repository root:
 
 ```bash
+npm run install:all
 npm run format
 ```
 
@@ -96,7 +97,6 @@ To run the frontend:
 
 ```bash
 cd Frontend
-npm install
 npm run dev
 ```
 
