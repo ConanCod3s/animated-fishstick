@@ -1,0 +1,12 @@
+{
+  "name": "aquaguard",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "format": "prettier \"Frontend/src/**/*.{js,jsx,css}\" \"Frontend/index.html\" \"Frontend/package.json\" \"Backend/**/*.{js,jsx,css,json,md}\" \"package.json\" --write",
+    "install:all": "npm install && npm --prefix Frontend install && npm --prefix Backend install"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}

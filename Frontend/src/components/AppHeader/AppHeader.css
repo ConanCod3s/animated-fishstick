@@ -1,0 +1,42 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  color: #fff;
+  background: #0d5960;
+}
+.brand {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: transparent;
+  cursor: pointer;
+}
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+.header-button {
+  padding: 8px 12px;
+  border: 1px solid #83b5b9;
+  border-radius: 8px;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+@media (max-width: 620px) {
+  .app-header {
+    align-items: flex-start;
+    padding: 14px 20px;
+  }
+  .account-menu {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
