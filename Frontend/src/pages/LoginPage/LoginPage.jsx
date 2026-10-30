@@ -7,7 +7,7 @@ import { auth } from "../../firebase/Config";
 import { APP_NAME } from "../../utils/constants";
 import "./LoginPage.css";
 
-function LoginPage({ onLogin }) {
+function LoginPage({ errorMessage }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,19 +21,11 @@ function LoginPage({ onLogin }) {
 
     try {
       const emailAddress = email.trim().toLowerCase();
-      const credentials = isSignUp
-        ? await createUserWithEmailAndPassword(
-            auth,
-            emailAddress,
-            password,
-          )
-        : await signInWithEmailAndPassword(
-            auth,
-            emailAddress,
-            password,
-          );
-
-      onLogin(credentials.user);
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, emailAddress, password);
+      } else {
+        await signInWithEmailAndPassword(auth, emailAddress, password);
+      }
     } catch (authError) {
       setError(getAuthErrorMessage(authError.code));
     } finally {
@@ -94,7 +86,9 @@ function LoginPage({ onLogin }) {
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-          {error && <p className="login-error">{error}</p>}
+          {(error || errorMessage) && (
+            <p className="login-error">{error || errorMessage}</p>
+          )}
           <button disabled={isLoading} type="submit">
             {isLoading ? "Please wait..." : isSignUp ? "Sign up" : "Sign in"}
           </button>
