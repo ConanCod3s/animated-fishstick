@@ -1,14 +1,60 @@
 import { useState } from "react";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../../firebase/Config";
 import { APP_NAME } from "../../utils/constants";
 import "./LoginPage.css";
 
 function LoginPage({ onLogin }) {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    onLogin({ email: email.trim().toLowerCase() });
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const emailAddress = email.trim().toLowerCase();
+      const credentials = isSignUp
+        ? await createUserWithEmailAndPassword(
+            auth,
+            emailAddress,
+            password,
+          )
+        : await signInWithEmailAndPassword(
+            auth,
+            emailAddress,
+            password,
+          );
+
+      onLogin(credentials.user);
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError.code));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function getAuthErrorMessage(errorCode) {
+    if (errorCode.includes("invalid-credential")) {
+      return "The email or password is incorrect.";
+    }
+    if (errorCode.includes("email-already-in-use")) {
+      return "An account already exists for this email.";
+    }
+    if (errorCode.includes("weak-password")) {
+      return "Use a password with at least six characters.";
+    }
+    if (errorCode.includes("invalid-email")) {
+      return "Enter a valid email address.";
+    }
+    return "Something went wrong. Please try again.";
   }
 
   return (
@@ -22,7 +68,9 @@ function LoginPage({ onLogin }) {
           <p className="eyebrow">Aquarium monitoring</p>
           <h1>{APP_NAME}</h1>
           <p className="login-intro">
-            Sign in to view aquariums and manage your tank.
+            {isSignUp
+              ? "Create an account to use AquaGuard."
+              : "Sign in to view aquariums and manage your tank."}
           </p>
         </div>
         <form className="login-form" onSubmit={handleSubmit}>
@@ -41,22 +89,26 @@ function LoginPage({ onLogin }) {
             id="password"
             name="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete={isSignUp ? "new-password" : "current-password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-          <p
-            style={{
-              color: "red",
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            DEV PURPOSE ONLY - Password accepts ANY non empty text
-          </p>
-          <button type="submit">Sign in</button>
+          {error && <p className="login-error">{error}</p>}
+          <button disabled={isLoading} type="submit">
+            {isLoading ? "Please wait..." : isSignUp ? "Sign up" : "Sign in"}
+          </button>
         </form>
+        <button
+          className="login-toggle"
+          type="button"
+          onClick={() => {
+            setError("");
+            setIsSignUp(!isSignUp);
+          }}
+        >
+          {isSignUp ? "Have an account? Sign in" : "New User? Sign Up"}
+        </button>
       </section>
     </main>
   );

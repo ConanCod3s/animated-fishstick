@@ -45,3 +45,23 @@
   background: var(--teal);
   cursor: pointer;
 }
+.login-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.login-error {
+  margin: 8px 0 0;
+  color: #a40000;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.login-toggle {
+  display: block;
+  margin: 20px auto 0;
+  padding: 0;
+  border: 0;
+  color: var(--teal);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+}
