@@ -1,18 +1,16 @@
-const {beforeUserCreated} = require("firebase-functions/v2/identity");
-const {HttpsError} = require("firebase-functions/v2/https");
+const {onUserCreated} = require("firebase-functions/v2/identity");
+const {getAuth} = require("firebase-admin/auth");
 const {FieldValue} = require("firebase-admin/firestore");
 const {db} = require("../firebase");
 const {validateUserEmail} = require("./validateUserEmail");
 
-const createUserProfile = beforeUserCreated(async (event) => {
+const createUserProfile = onUserCreated(async (event) => {
   const user = event.data;
   const isAllowed = await validateUserEmail(user.email);
 
   if (!isAllowed) {
-    throw new HttpsError(
-        "permission-denied",
-        "This email is not approved for AquaGuard.",
-    );
+    await getAuth().deleteUser(user.uid);
+    return;
   }
 
   await db.collection("users").doc(user.uid).set({
