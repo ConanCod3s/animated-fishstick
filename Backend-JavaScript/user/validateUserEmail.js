@@ -1,5 +1,10 @@
 const {db} = require("../firebase");
 
+/**
+ * Checks whether an email is on the Firebase whitelist.
+ * @param {string} email The email address to check.
+ * @return {Promise<boolean>} True when the email is approved.
+ */
 async function validateUserEmail(email) {
   const normalizedEmail = email ? email.trim().toLowerCase() : "";
 
@@ -17,5 +22,3 @@ async function validateUserEmail(email) {
 }
 
 module.exports = {validateUserEmail};
-
-
