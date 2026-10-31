@@ -18,6 +18,7 @@ const createUserProfile = onUserCreated(async (event) => {
     .doc(user.uid)
     .set({
       email: user.email || "",
+      displayName: user.email || "",
       approved: true,
       createdAt: FieldValue.serverTimestamp(),
     });

@@ -14,7 +14,6 @@ function TankCard({ currentUser, onSelect, tank }) {
         </div>
         <span className={`status ${statusClass}`}>{tank.status}</span>
       </div>
-      <p className="tank-description">{tank.stock}</p>
       <dl className="tank-summary">
         <div>
           <dt>Size</dt>
@@ -22,7 +21,7 @@ function TankCard({ currentUser, onSelect, tank }) {
         </div>
         <div>
           <dt>Temperature</dt>
-          <dd>{tank.temperature}°F</dd>
+          <dd>{tank.temperature}°C</dd>
         </div>
         <div>
           <dt>pH</dt>

@@ -2,11 +2,9 @@ import AppHeader from "../../components/AppHeader/AppHeader";
 import "./TankDetailPage.css";
 
 const readingFields = [
-  { key: "temperature", label: "Temperature", unit: "°F" },
+  { key: "temperature", label: "Temperature", unit: "°C" },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
-  { key: "nitrite", label: "Nitrite", unit: "ppm" },
-  { key: "nitrate", label: "Nitrate", unit: "ppm" },
 ];
 
 function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
@@ -29,9 +27,7 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
           <div>
             <p className="eyebrow">{tank.type}</p>
             <h1>{tank.name}</h1>
-            <p>
-              {tank.gallons} gallons · {tank.stock}
-            </p>
+            <p>{tank.gallons} gallons</p>
           </div>
           <span className={`status ${statusClass}`}>{tank.status}</span>
         </section>

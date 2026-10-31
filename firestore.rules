@@ -17,7 +17,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /whiteList/{documentId} {
+    match /allowlist/{documentId} {
       allow read, write: if false;
     }
 
