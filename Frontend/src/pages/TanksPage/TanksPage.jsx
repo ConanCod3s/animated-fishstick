@@ -14,6 +14,7 @@ function TanksPage({ currentUser, onSelectTank, onSignOut, tanks }) {
           <p className="eyebrow">Team aquariums</p>
           <h1>All tanks</h1>
           <p>View current conditions for every aquarium in AquaGuard.</p>
+          {/* TODO: Add an "Add Tank" button and tank creation form. */}
         </section>
         <section className="tank-card-grid" aria-label="Aquariums">
           {tanks.map((tank) => (

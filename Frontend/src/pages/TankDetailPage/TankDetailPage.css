@@ -39,14 +39,18 @@
   font-size: 0.8rem;
 }
 .chat-messages {
-  min-height: 260px;
+  height: 260px;
   padding: 16px;
   border-radius: 10px;
   color: var(--muted);
   background: #f3f8f8;
+  overflow-y: auto;
 }
 .chat-messages p {
-  margin: 0;
+  margin: 0 0 12px;
+}
+.chat-messages p:last-child {
+  margin-bottom: 0;
 }
 .chat-form {
   margin-top: 18px;
@@ -81,8 +85,7 @@
   justify-content: end;
   display: flex;
 }
-.chat-input-row input:disabled,
-.chat-input-row button:disabled {
+.chat-input-send-button button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }

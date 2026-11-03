@@ -1,4 +1,6 @@
+import { useState } from "react";
 import AppHeader from "../../components/AppHeader/AppHeader";
+import { AI_WORKER_URL } from "../../utils/constants";
 import "./TankDetailPage.css";
 
 const readingFields = [
@@ -8,9 +10,72 @@ const readingFields = [
 ];
 
 function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  // TODO: Use tank.ownerId and currentUser.uid once tanks load from Firestore.
   const isOwner = currentUser.email === tank.ownerEmail;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
+
+  async function handleChatSubmit(event) {
+    event.preventDefault();
+
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage || isSending) {
+      return;
+    }
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      { sender: "You", text: trimmedMessage },
+    ]);
+    setMessage("");
+    setIsSending(true);
+
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${AI_WORKER_URL}/chat`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: trimmedMessage,
+          tank: {
+            id: tank.id,
+            name: tank.name,
+            type: tank.type,
+            gallons: tank.gallons,
+            status: tank.status,
+            temperature: tank.temperature,
+            ph: tank.ph,
+            ammonia: tank.ammonia,
+          },
+        }),
+      });
+      // TODO: Display an error message when the AI returns an error response.
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "AquaGuard could not answer.");
+      }
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        { sender: "AquaGuard", text: data.response },
+      ]);
+    } catch (error) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        { sender: "AquaGuard", text: error.message },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -57,9 +122,18 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
               </div>
             </div>
             <div className="chat-messages" aria-live="polite">
-              <p>Ask a question about {tank.name}'s tank!.</p>
+              {messages.length === 0 && (
+                <p>Ask a question about {tank.name}'s tank!</p>
+              )}
+              {/* TODO: Render basic Markdown formatting such as **bold text**. */}
+              {messages.map((chatMessage, index) => (
+                <p key={`${chatMessage.sender}-${index}`}>
+                  <strong>{chatMessage.sender}:</strong> {chatMessage.text}
+                </p>
+              ))}
+              {isSending && <p>AquaGuard is thinking...</p>}
             </div>
-            <form className="chat-form">
+            <form className="chat-form" onSubmit={handleChatSubmit}>
               <label htmlFor="chat-message">Message</label>
               <div className="chat-input-row">
                 <input
@@ -67,12 +141,13 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
                   name="message"
                   placeholder="Hows the tank doing?"
                   type="text"
-                  disabled
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
                 />
               </div>
               <div className="chat-input-send-button">
-                <button type="submit" disabled>
-                  Send
+                <button type="submit" disabled={!message.trim() || isSending}>
+                  {isSending ? "Sending..." : "Send"}
                 </button>
               </div>
             </form>
