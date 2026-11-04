@@ -21,7 +21,7 @@ function TankCard({ currentUser, onSelect, tank }) {
         </div>
         <div>
           <dt>Temperature</dt>
-          <dd>{tank.temperature}°C</dd>
+          <dd>{tank.temperature}°F</dd>
         </div>
         <div>
           <dt>pH</dt>
