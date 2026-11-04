@@ -39,6 +39,17 @@ const EXAMPLE_TANKS = [
     temperature: 26.1,
     ph: 7,
     ammonia: 0,
+  },
+  {
+    id: "tank-004",
+    ownerEmail: "ronnie@example.com",
+    name: "Ronnie's Tank",
+    type: "Everybodies Favorite Sun Fish",
+    gallons: 1000,
+    status: "Normal",
+    temperature: 18,
+    ph: 8.1,
+    ammonia: 0,
   }
 ];
 
