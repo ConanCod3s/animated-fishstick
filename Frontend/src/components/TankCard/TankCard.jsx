@@ -1,7 +1,7 @@
 import "./TankCard.css";
 
 function TankCard({ currentUser, onSelect, tank }) {
-  const isOwner = currentUser.email === tank.ownerEmail;
+  const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
 
@@ -32,12 +32,16 @@ function TankCard({ currentUser, onSelect, tank }) {
           <dd>{tank.ammonia} ppm</dd>
         </div>
       </dl>
+      <div className="tank-summary">
+        Created At:{" "}
+        {new Date(tank.createdAt.seconds * 1000).toLocaleDateString()}
+      </div>
       <button
         className="primary-button"
         type="button"
         onClick={() => onSelect(tank.id)}
       >
-        {isOwner ? "Manage My Tank" : "View Tank"}
+        {isOwner ? "Manage My Tank" : `View ${tank.name}`}
       </button>
     </article>
   );

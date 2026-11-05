@@ -4,12 +4,12 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-30",
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
   },
   "analytics_engine_datasets": [
     {
       "binding": "AI_USAGE",
-      "dataset": "aquaguard_ai_usage"
-    }
-  ]
+      "dataset": "aquaguard_ai_usage",
+    },
+  ],
 }

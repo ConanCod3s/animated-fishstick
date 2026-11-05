@@ -38,7 +38,10 @@ export default {
       const chatRequest = await getChatRequest(request);
 
       if (!chatRequest) {
-        return jsonResponse({ error: "Message and tank details are required" }, 400);
+        return jsonResponse(
+          { error: "Message and tank details are required" },
+          400,
+        );
       }
 
       const { message, tank } = chatRequest;
@@ -73,7 +76,10 @@ export default {
       const answer = result.choices?.[0]?.message?.content;
 
       if (!answer) {
-        return jsonResponse({ error: "AquaGuard did not return an answer" }, 502);
+        return jsonResponse(
+          { error: "AquaGuard did not return an answer" },
+          502,
+        );
       }
 
       env.AI_USAGE.writeDataPoint({
