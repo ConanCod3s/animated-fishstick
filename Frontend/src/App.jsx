@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot } from "firebase/firestore";
 import "./App.css";
 import { auth, db } from "./firebase/Config";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import TankDetailPage from "./pages/TankDetailPage/TankDetailPage";
 import TanksPage from "./pages/TanksPage/TanksPage";
-import { EXAMPLE_TANKS as tanks } from "./utils/constants";
 
 async function hasApprovedProfile(user) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -31,6 +30,7 @@ function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [selectedTankId, setSelectedTankId] = useState(null);
+  const [tanks, setTanks] = useState([]);
   const selectedTank = tanks.find((tank) => tank.id === selectedTankId);
 
   useEffect(() => {
@@ -56,6 +56,16 @@ function App() {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return undefined;
+    }
+
+    return onSnapshot(collection(db, "tanks"), (snapshot) => {
+      setTanks(snapshot.docs.map((tank) => ({ id: tank.id, ...tank.data() })));
+    });
+  }, [currentUser]);
 
   async function handleSignOut() {
     setSelectedTankId(null);

@@ -13,8 +13,7 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
-  // TODO: Use tank.ownerId and currentUser.uid once tanks load from Firestore.
-  const isOwner = currentUser.email === tank.ownerEmail;
+  const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
 
