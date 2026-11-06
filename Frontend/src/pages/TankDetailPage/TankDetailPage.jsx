@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
 import AppHeader from "../../components/AppHeader/AppHeader";
-import { AI_WORKER_URL } from "../../utils/constants";
+import TankReadingCharts from "../../components/TankReadingCharts/TankReadingCharts";
+import { db } from "../../firebase/Config";
+import {
+  AI_WORKER_URL,
+  SIMULATION_INTERVAL_MS,
+} from "../../utils/constants";
 import "./TankDetailPage.css";
 
 const readingFields = [
@@ -9,13 +15,125 @@ const readingFields = [
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];
 
+function roundReading(value, decimals) {
+  return Number(value.toFixed(decimals));
+}
+
+function createHistoryReading(tank) {
+  return {
+    temperature: tank.temperature,
+    ph: tank.ph,
+    ammonia: tank.ammonia,
+    recordedAt: Date.now(),
+  };
+}
+
+function getNormalReadings(tank) {
+  return {
+    temperature: roundReading(tank.temperature + (Math.random() - 0.5) * 0.4, 1),
+    ph: roundReading(Math.max(0, Math.min(14, tank.ph + (Math.random() - 0.5) * 0.2)), 1),
+    ammonia: roundReading(Math.max(0, tank.ammonia + (Math.random() - 0.5) * 0.02), 2),
+    status: "Normal",
+  };
+}
+
+function getAnomalyReadings(tank) {
+  const anomalies = [
+    {
+      temperature: roundReading(tank.temperature + 5, 1),
+      status: "Warning",
+    },
+    {
+      ph: roundReading(Math.min(14, tank.ph + 1), 1),
+      status: "Warning",
+    },
+    {
+      ammonia: roundReading(Math.max(0.5, tank.ammonia + 0.5), 2),
+      status: "Warning",
+    },
+  ];
+
+  return anomalies[Math.floor(Math.random() * anomalies.length)];
+}
+
 function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isUpdatingTank, setIsUpdatingTank] = useState(false);
+  const [simulationError, setSimulationError] = useState("");
+  const [readingHistory, setReadingHistory] = useState([
+    createHistoryReading(tank),
+  ]);
+  const intervalRef = useRef(null);
+  const tankRef = useRef(tank);
+  const baselineReadingsRef = useRef(null);
   const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
+
+  useEffect(() => {
+    tankRef.current = tank;
+  }, [tank]);
+
+  useEffect(() => {
+    return () => window.clearInterval(intervalRef.current);
+  }, []);
+
+  async function updateTankReadings(forceAnomaly = false) {
+    if (isUpdatingTank) {
+      return;
+    }
+
+    setIsUpdatingTank(true);
+    setSimulationError("");
+
+    try {
+      const currentTank = tankRef.current;
+      const hasAnomaly = forceAnomaly || Math.random() < 0.05;
+      const readings = hasAnomaly
+        ? getAnomalyReadings(currentTank)
+        : getNormalReadings(baselineReadingsRef.current || currentTank);
+
+      await updateDoc(doc(db, "tanks", currentTank.id), readings);
+      setReadingHistory((currentHistory) => [
+        ...currentHistory.slice(-19),
+        createHistoryReading({ ...currentTank, ...readings }),
+      ]);
+    } catch {
+      setSimulationError("AquaGuard could not update this tank.");
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setIsSimulating(false);
+    } finally {
+      setIsUpdatingTank(false);
+    }
+  }
+
+  function handleStartSimulation() {
+    if (intervalRef.current) {
+      return;
+    }
+
+    baselineReadingsRef.current = {
+      temperature: tank.temperature,
+      ph: tank.ph,
+      ammonia: tank.ammonia,
+    };
+    intervalRef.current = window.setInterval(
+      updateTankReadings,
+      SIMULATION_INTERVAL_MS,
+    );
+    setIsSimulating(true);
+    setSimulationError("");
+  }
+
+  function handleStopSimulation() {
+    window.clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    setIsSimulating(false);
+  }
 
   async function handleChatSubmit(event) {
     event.preventDefault();
@@ -153,26 +271,44 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
           </section>
         </div>
         {isOwner && (
+          <div>
           <section className="panel owner-panel">
             <div>
-              <p className="eyebrow">Owner controls</p>
-              <h2>Manage and test this tank</h2>
+              <h2>Run simulations</h2>
             </div>
             <div className="owner-actions">
-              <button className="primary-button" type="button">
-                Start simulation
+              <button
+                className="primary-button"
+                disabled={isSimulating}
+                type="button"
+                onClick={handleStartSimulation}
+              >
+                Start
               </button>
-              <button className="secondary-button" type="button">
+              <button
+                className="secondary-button"
+                disabled={!isSimulating}
+                type="button"
+                onClick={handleStopSimulation}
+              >
                 Stop
               </button>
-              <button className="warning-button" type="button">
+              <button
+                className="warning-button"
+                disabled={isUpdatingTank}
+                type="button"
+                onClick={() => updateTankReadings(true)}
+              >
                 Inject anomaly
-              </button>
-              <button className="secondary-button" type="button">
-                Edit details
               </button>
             </div>
           </section>
+            <p className="simulation-status">
+              {simulationError ||
+                (isSimulating ? "Simulation is running." : "Simulation is stopped.")}
+            </p>
+          <TankReadingCharts readingHistory={readingHistory} />
+          </div>
         )}
       </main>
     </div>
