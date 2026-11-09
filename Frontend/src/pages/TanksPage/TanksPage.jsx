@@ -2,6 +2,7 @@ import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import AppHeader from "../../components/AppHeader/AppHeader";
 import TankCard from "../../components/TankCard/TankCard";
+import TankWarnings from "../../components/TankWarnings/TankWarnings";
 import { db } from "../../firebase/Config";
 import "./TanksPage.css";
 
@@ -58,6 +59,11 @@ function TanksPage({ currentUser, onSelectTank, onSignOut, tanks }) {
         onSignOut={onSignOut}
       />
       <main className="page-content">
+        <TankWarnings
+          tanks={tanks}
+          onSelectTank={onSelectTank}
+          currentUser={currentUser}
+        />
         <section className="page-intro">
           <p className="eyebrow">Team aquariums</p>
           <h1>All tanks</h1>
