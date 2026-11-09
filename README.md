@@ -143,6 +143,15 @@ The backend folder contains the backend workspace and its formatting configurati
 - Document component methods, data types, validation rules, and error handling.
 - Deliver the interface contracts and data structures.
 
+### Tiffany Mitchell - Integration Lead and Technical Documentation
+
+- Maintain AquaGuard's technical documentation.
+- Document system integration and component interactions.
+- Review alignment with architecture and project requirements.
+- Identify and document integration gaps.
+- Coordinate documentation updates with team members.
+- Deliver integration documentation for the final portfolio.
+
 All team members peer-review the documentation, architecture, code, and final product to keep them aligned.
 
 
