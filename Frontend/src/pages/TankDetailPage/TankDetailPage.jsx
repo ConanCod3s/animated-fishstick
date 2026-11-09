@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import AppHeader from "../../components/AppHeader/AppHeader";
 import TankReadingCharts from "../../components/TankReadingCharts/TankReadingCharts";
+import TankWarnings from "../../components/TankWarnings/TankWarnings";
 import { db } from "../../firebase/Config";
-import {
-  AI_WORKER_URL,
-  SIMULATION_INTERVAL_MS,
-} from "../../utils/constants";
+import { AI_WORKER_URL, SIMULATION_INTERVAL_MS } from "../../utils/constants";
 import "./TankDetailPage.css";
 
 const readingFields = [
@@ -30,9 +28,18 @@ function createHistoryReading(tank) {
 
 function getNormalReadings(tank) {
   return {
-    temperature: roundReading(tank.temperature + (Math.random() - 0.5) * 0.4, 1),
-    ph: roundReading(Math.max(0, Math.min(14, tank.ph + (Math.random() - 0.5) * 0.2)), 1),
-    ammonia: roundReading(Math.max(0, tank.ammonia + (Math.random() - 0.5) * 0.02), 2),
+    temperature: roundReading(
+      tank.temperature + (Math.random() - 0.5) * 0.4,
+      1,
+    ),
+    ph: roundReading(
+      Math.max(0, Math.min(14, tank.ph + (Math.random() - 0.5) * 0.2)),
+      1,
+    ),
+    ammonia: roundReading(
+      Math.max(0, tank.ammonia + (Math.random() - 0.5) * 0.02),
+      2,
+    ),
     status: "Normal",
   };
 }
@@ -61,14 +68,19 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [secondsUntilUpdate, setSecondsUntilUpdate] = useState(
+    Math.ceil(SIMULATION_INTERVAL_MS / 1000),
+  );
   const [isUpdatingTank, setIsUpdatingTank] = useState(false);
   const [simulationError, setSimulationError] = useState("");
   const [readingHistory, setReadingHistory] = useState([
     createHistoryReading(tank),
   ]);
   const intervalRef = useRef(null);
+  const nextUpdateAtRef = useRef(0);
   const tankRef = useRef(tank);
   const baselineReadingsRef = useRef(null);
+  const updateInProgressRef = useRef(false);
   const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
@@ -81,22 +93,55 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
     return () => window.clearInterval(intervalRef.current);
   }, []);
 
+  useEffect(() => {
+    if (!isSimulating) {
+      return undefined;
+    }
+
+    const countdown = window.setInterval(() => {
+      setSecondsUntilUpdate(
+        Math.max(0, Math.ceil((nextUpdateAtRef.current - Date.now()) / 1000)),
+      );
+    }, 250);
+
+    return () => window.clearInterval(countdown);
+  }, [isSimulating]);
+
   async function updateTankReadings(forceAnomaly = false) {
-    if (isUpdatingTank) {
+    if (updateInProgressRef.current) {
       return;
     }
 
+    updateInProgressRef.current = true;
     setIsUpdatingTank(true);
     setSimulationError("");
 
     try {
       const currentTank = tankRef.current;
+      const baseline = currentTank.simulationBaseline ||
+        baselineReadingsRef.current || {
+          temperature: currentTank.temperature,
+          ph: currentTank.ph,
+          ammonia: currentTank.ammonia,
+        };
+      baselineReadingsRef.current = baseline;
       const hasAnomaly = forceAnomaly || Math.random() < 0.05;
       const readings = hasAnomaly
         ? getAnomalyReadings(currentTank)
-        : getNormalReadings(baselineReadingsRef.current || currentTank);
+        : getNormalReadings(baseline);
 
-      await updateDoc(doc(db, "tanks", currentTank.id), readings);
+      await updateDoc(doc(db, "tanks", currentTank.id), {
+        ...readings,
+        simulationBaseline: baseline,
+        warningPending: hasAnomaly
+          ? true
+          : (currentTank.warningPending ?? currentTank.status === "Warning"),
+      });
+      tankRef.current = {
+        ...currentTank,
+        ...readings,
+        simulationBaseline: baseline,
+      };
       setReadingHistory((currentHistory) => [
         ...currentHistory.slice(-19),
         createHistoryReading({ ...currentTank, ...readings }),
@@ -107,6 +152,7 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
       intervalRef.current = null;
       setIsSimulating(false);
     } finally {
+      updateInProgressRef.current = false;
       setIsUpdatingTank(false);
     }
   }
@@ -116,15 +162,19 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
       return;
     }
 
-    baselineReadingsRef.current = {
-      temperature: tank.temperature,
-      ph: tank.ph,
-      ammonia: tank.ammonia,
-    };
-    intervalRef.current = window.setInterval(
-      updateTankReadings,
-      SIMULATION_INTERVAL_MS,
-    );
+    baselineReadingsRef.current = tank.simulationBaseline ||
+      baselineReadingsRef.current || {
+        temperature: tank.temperature,
+        ph: tank.ph,
+        ammonia: tank.ammonia,
+      };
+    nextUpdateAtRef.current = Date.now() + SIMULATION_INTERVAL_MS;
+    setSecondsUntilUpdate(Math.ceil(SIMULATION_INTERVAL_MS / 1000));
+    intervalRef.current = window.setInterval(() => {
+      nextUpdateAtRef.current = Date.now() + SIMULATION_INTERVAL_MS;
+      setSecondsUntilUpdate(Math.ceil(SIMULATION_INTERVAL_MS / 1000));
+      updateTankReadings();
+    }, SIMULATION_INTERVAL_MS);
     setIsSimulating(true);
     setSimulationError("");
   }
@@ -133,6 +183,37 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
     window.clearInterval(intervalRef.current);
     intervalRef.current = null;
     setIsSimulating(false);
+  }
+
+  async function handleResetSimulation() {
+    if (updateInProgressRef.current) {
+      return;
+    }
+
+    handleStopSimulation();
+    const currentTank = tankRef.current;
+    const baseline =
+      currentTank.simulationBaseline || baselineReadingsRef.current;
+    if (!baseline) {
+      return;
+    }
+
+    updateInProgressRef.current = true;
+    setIsUpdatingTank(true);
+    setSimulationError("");
+    try {
+      const readings = { ...baseline, status: "Normal" };
+      await updateDoc(doc(db, "tanks", currentTank.id), readings);
+      tankRef.current = { ...currentTank, ...readings };
+      setReadingHistory([createHistoryReading(readings)]);
+    } catch {
+      setSimulationError(
+        "AquaGuard could not reset this tank. Please try again.",
+      );
+    } finally {
+      updateInProgressRef.current = false;
+      setIsUpdatingTank(false);
+    }
   }
 
   async function handleChatSubmit(event) {
@@ -205,6 +286,7 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
         <button className="back-button" type="button" onClick={onBack}>
           ← Return to All Tanks
         </button>
+        <TankWarnings tanks={[tank]} currentUser={currentUser} />
         <section className="tank-detail-heading">
           <div>
             <p className="eyebrow">{tank.type}</p>
@@ -272,42 +354,53 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
         </div>
         {isOwner && (
           <div>
-          <section className="panel owner-panel">
-            <div>
-              <h2>Run simulations</h2>
-            </div>
-            <div className="owner-actions">
-              <button
-                className="primary-button"
-                disabled={isSimulating}
-                type="button"
-                onClick={handleStartSimulation}
-              >
-                Start
-              </button>
-              <button
-                className="secondary-button"
-                disabled={!isSimulating}
-                type="button"
-                onClick={handleStopSimulation}
-              >
-                Stop
-              </button>
-              <button
-                className="warning-button"
-                disabled={isUpdatingTank}
-                type="button"
-                onClick={() => updateTankReadings(true)}
-              >
-                Inject anomaly
-              </button>
-            </div>
-          </section>
-            <p className="simulation-status">
-              {simulationError ||
-                (isSimulating ? "Simulation is running." : "Simulation is stopped.")}
-            </p>
-          <TankReadingCharts readingHistory={readingHistory} />
+            <section className="panel owner-panel">
+              <div>
+                <h2>Run simulations</h2>
+                <p className="simulation-status">
+                  {simulationError ||
+                    (isSimulating
+                      ? `Simulation is running. Next update in ${secondsUntilUpdate}s.`
+                      : "Simulation is stopped.")}
+                </p>
+              </div>
+              <div className="owner-actions">
+                <button
+                  className="primary-button"
+                  disabled={isSimulating || isUpdatingTank}
+                  type="button"
+                  onClick={handleStartSimulation}
+                >
+                  Start
+                </button>
+                <button
+                  className="secondary-button"
+                  disabled={!isSimulating}
+                  type="button"
+                  onClick={handleStopSimulation}
+                >
+                  Stop
+                </button>
+                <button
+                  className="secondary-button"
+                  disabled={isUpdatingTank || !tank.simulationBaseline}
+                  type="button"
+                  onClick={handleResetSimulation}
+                >
+                  Reset
+                </button>
+                <button
+                  className="warning-button"
+                  disabled={isUpdatingTank}
+                  type="button"
+                  onClick={() => updateTankReadings(true)}
+                >
+                  Inject anomaly
+                </button>
+              </div>
+            </section>
+
+            <TankReadingCharts readingHistory={readingHistory} />
           </div>
         )}
       </main>

@@ -62,6 +62,21 @@
   color: #8a3f08;
   background: #ffead8;
 }
+.tank-warnings {
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  border: 1px solid #e2a06c;
+  border-radius: 8px;
+  color: #8a3f08;
+  background: #fff4eb;
+}
+.tank-warnings ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.tank-warnings button {
+  margin-left: 12px;
+}
 .status-emergency {
   color: #ff0000;
   background: #ffead8;
