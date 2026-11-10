@@ -103,6 +103,7 @@ npm run dev
 Useful frontend checks:
 
 ```bash
+npm --prefix Frontend test
 npm run lint
 npm run build
 ```
