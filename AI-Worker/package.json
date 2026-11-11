@@ -9,6 +9,7 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
+    "jest": "^30.5.2",
     "wrangler": "^4.156.0"
   }
 }
