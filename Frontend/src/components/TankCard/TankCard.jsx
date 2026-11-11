@@ -33,7 +33,7 @@ function TankCard({ currentUser, onSelect, tank }) {
         </div>
       </dl>
       <div className="tank-summary">
-        Created At:{" "}
+        Created On:{" "}
         {new Date(tank.createdAt.seconds * 1000).toLocaleDateString()}
       </div>
       <button
