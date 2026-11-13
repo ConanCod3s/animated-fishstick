@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import AppHeader from "../../components/AppHeader/AppHeader";
 import TankReadingCharts from "../../components/TankReadingCharts/TankReadingCharts";
@@ -8,7 +8,7 @@ import { AI_WORKER_URL, SIMULATION_INTERVAL_MS } from "../../utils/constants";
 import "./TankDetailPage.css";
 
 const readingFields = [
-  { key: "temperature", label: "Temperature", unit: "°C" },
+  { key: "temperature", label: "Temperature", unit: "°F" },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];

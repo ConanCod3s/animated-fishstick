@@ -1,4 +1,4 @@
-const corsHeaders = {
+﻿const corsHeaders = {
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Origin": "*",
@@ -56,7 +56,7 @@ export default {
         `Type: ${tank.type}\n` +
         `Size: ${tank.gallons} gallons\n` +
         `Status: ${tank.status}\n` +
-        `Temperature: ${tank.temperature} °C\n` +
+        `Temperature: ${tank.temperature} °F\n` +
         `pH: ${tank.ph}\n` +
         `Ammonia: ${tank.ammonia} ppm`;
 
