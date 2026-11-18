@@ -5,6 +5,7 @@ import {
 
 function Ticketbox({ ticket, loading = false, error = "" }) {
   const { unit, symbol } = useTemperatureUnit();
+
   if (error) return <p role="alert">{error}</p>;
   if (!ticket && loading)
     return <p role="status">Loading ticket information...</p>;

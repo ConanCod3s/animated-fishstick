@@ -51,7 +51,6 @@ export async function createTicket({
 }) {
   if (tank.ownerId !== userId)
     throw new Error("Only the tank owner can create a ticket.");
-
   const ticket = {
     tankId,
     tankName: String(tank.name).slice(0, 200),
@@ -92,7 +91,8 @@ export async function createTicket({
     if (!existing) throw new Error("Could not retrieve existing ticket.");
     return { ticket: { ...existing, id: tankId }, created: false };
   }
-  if (!response.ok) throw new Error("Could not save  support ticket.");
+  if (!response.ok)
+    throw new Error("Could not save  support ticket.");
   return {
     ticket: { ...decodeFields((await response.json()).fields), id: tankId },
     created: true,

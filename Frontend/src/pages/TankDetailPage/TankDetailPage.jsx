@@ -5,7 +5,12 @@ import Monitoring from "./Monitoring/Monitoring";
 import Simulations from "./Simulations/Simulations";
 import "./TankDetailPage.css";
 
-function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
+function TankDetailPage({
+  currentUser,
+  onBack,
+  onSignOut,
+  tank,
+}) {
   const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
@@ -31,7 +36,11 @@ function TankDetailPage({ currentUser, onBack, onSignOut, tank }) {
         </section>
         <div className="detail-grid">
           <Monitoring tank={tank} />
-          <AIChat key={tank.id} tank={tank} currentUser={currentUser} />
+          <AIChat
+            key={tank.id}
+            tank={tank}
+            currentUser={currentUser}
+          />
         </div>
         {isOwner && <Simulations key={tank.id} tank={tank} />}
       </main>

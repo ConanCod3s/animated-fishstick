@@ -77,7 +77,10 @@ export default {
               403,
             );
           if (chatRequest.confirmEscalation !== true)
-            return jsonResponse({ error: "Confirmation is required" }, 400);
+            return jsonResponse(
+              { error: "Confirmation is required" },
+              400,
+            );
           const saved = await createTicket({
             tankId: tank.id,
             tank,
@@ -163,8 +166,7 @@ export default {
               created: false,
             });
           return jsonResponse({
-            response:
-              "Do you want to escalate this issue to an AquaGuard representative?",
+            response: "Do you want to escalate this issue to an AquaGuard representative?",
             confirmationRequired: tank.ownerId === userId,
             escalationQuestion: message,
             escalationUnavailable: tank.ownerId !== userId,

@@ -4,13 +4,14 @@ import {
 } from "../../../utils/temperature";
 
 const readingFields = [
-  { key: "temperature", label: "Temperature", isTemperature: true },
+  { key: "temperature", label: "Temperature", unit: "°F" },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];
 
 function Monitoring({ tank }) {
   const { unit, symbol } = useTemperatureUnit();
+
   return (
     <section className="panel">
       <div className="panel-heading">

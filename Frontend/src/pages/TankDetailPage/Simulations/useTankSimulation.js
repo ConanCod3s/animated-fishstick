@@ -191,7 +191,9 @@ function useTankSimulation(tank) {
       tankRef.current = { ...currentTank, ...readings };
       setReadingHistory([createHistoryReading(readings)]);
     } catch {
-      setSimulationError("AquaGuard could not reset this tank.");
+      setSimulationError(
+        "AquaGuard could not reset this tank.",
+      );
     } finally {
       updateInProgressRef.current = false;
       setIsUpdatingTank(false);

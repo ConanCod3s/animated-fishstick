@@ -141,7 +141,9 @@ function useAIChat({ tank, currentUser }) {
       });
       const data = await response.json();
       if (!response.ok || !data.ticket)
-        throw new Error(data.error || "Could not create a ticket.");
+        throw new Error(
+          data.error || "Could not create a ticket.",
+        );
       setCreatedTicket(data.ticket);
       setConfirmationQuestion("");
       setMessages((items) => [

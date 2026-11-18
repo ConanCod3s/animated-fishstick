@@ -20,7 +20,12 @@ const emptyTank = {
   ammonia: "",
 };
 
-function TanksPage({ currentUser, onSelectTank, onSignOut, tanks }) {
+function TanksPage({
+  currentUser,
+  onSelectTank,
+  onSignOut,
+  tanks,
+}) {
   const [isAddingTank, setIsAddingTank] = useState(false);
   const [newTank, setNewTank] = useState(emptyTank);
   const [error, setError] = useState("");
