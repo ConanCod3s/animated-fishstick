@@ -18,4 +18,10 @@
       "dataset": "aquaguard_ai_usage",
     },
   ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
 }
