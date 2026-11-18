@@ -4,7 +4,7 @@ import {
 } from "../../../utils/temperature";
 
 const readingFields = [
-  { key: "temperature", label: "Temperature", unit: "°F" },
+  { key: "temperature", label: "Temperature", isTemperature: true },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];
