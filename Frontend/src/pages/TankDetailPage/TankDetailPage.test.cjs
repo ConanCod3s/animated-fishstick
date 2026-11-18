@@ -166,8 +166,6 @@ test("injects an anomaly and lets a non-owner return without simulation controls
   expect(
     screen.queryByRole("button", { name: "Inject anomaly" }),
   ).not.toBeInTheDocument();
-  await user.click(
-    screen.getByRole("button", { name: /Return to All Tanks/ }),
-  );
+  await user.click(screen.getByRole("button", { name: /Return to All Tanks/ }));
   expect(onBack).toHaveBeenCalled();
 });

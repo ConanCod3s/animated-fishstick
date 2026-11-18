@@ -62,9 +62,12 @@ function App() {
       return undefined;
     }
 
-    return onSnapshot(collection(db, "tanks"), (snapshot) => {
+    const unsubscribeTanks = onSnapshot(collection(db, "tanks"), (snapshot) => {
       setTanks(snapshot.docs.map((tank) => ({ id: tank.id, ...tank.data() })));
     });
+    return () => {
+      unsubscribeTanks();
+    };
   }, [currentUser]);
 
   async function handleSignOut() {
@@ -83,6 +86,7 @@ function App() {
   if (selectedTank) {
     return (
       <TankDetailPage
+        key={selectedTank.id}
         currentUser={currentUser}
         onBack={() => setSelectedTankId(null)}
         onSignOut={handleSignOut}

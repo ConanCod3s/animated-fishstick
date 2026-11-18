@@ -84,6 +84,26 @@ Only one session controls a tank simulation at a time. Other approved users can 
 
 AI output is informational and does not replace aquarium-specific guidance.
 
+
+## Human Escalation
+
+The AI has **Chat** and **Tickets** tabs. The Worker asks the AI for a
+validated JSON decision (`none`, `ai_required`, or `user_requested`). An explicit
+`ai_required` decision creates a ticket automatically for the tank owner. A user
+request for a human displays **Yes, escalate** and **No, continue chat**; once confirmed `POST /tickets/confirm`. 
+
+The Worker retrieves current tank readings from Firestore using the caller's
+Firebase UID. It stores a ticket at `supportTickets/{tankId}` using an
+atomic create, never an upsert. Concurrent or repeated requests return the
+existing ticket. The prototype rules allow approved owners to create a bounded,
+validated ticket and deny ticket updates/deletes. **For this MVP there is one
+retained ticket per tank, not one new ticket each time an issue resolves.**
+Ticket closure/reopening is future work.
+
+Tickets contain the tank ID/name, requestors UID/Display name, creation dtg, question,
+escalation reason, AI answer, and reading snapshot.
+Ticket details appear only in the selected tank's Tickets tab.
+
 ## Local development
 
 From the repository root:
