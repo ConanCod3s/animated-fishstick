@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "check": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy"
-  },
+  "dev": "wrangler dev",
+  "check": "wrangler deploy --dry-run",
+  "deploy": "wrangler deploy",
+  "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
+},
   "devDependencies": {
     "jest": "^30.5.2",
     "wrangler": "^4.156.0"
