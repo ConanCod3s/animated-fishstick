@@ -34,7 +34,9 @@ test("shows tank details and selects a tank to manage", async () => {
     />,
   );
 
-  expect(screen.getByRole("heading", { name: "All tanks" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "All tanks" }),
+  ).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: "Community Tank" }),
   ).toBeInTheDocument();
