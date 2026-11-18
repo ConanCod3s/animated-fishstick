@@ -2,6 +2,8 @@
 
 AquaGuard is a capstone aquarium monitoring application. Approved users can view the team’s aquariums, inspect live readings, manage their own tank, and ask an AI assistant to explain current water conditions.
 
+**Live Application:** [AquaGuard](https://aquaguard-ai-worker.conancod3s.workers.dev/)
+
 ## MVP scope
 
 The MVP focuses on three capabilities:
