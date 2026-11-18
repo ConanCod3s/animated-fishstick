@@ -4,6 +4,11 @@ import AppHeader from "../../components/AppHeader/AppHeader";
 import TankCard from "../../components/TankCard/TankCard";
 import TankWarnings from "../../components/TankWarnings/TankWarnings";
 import { db } from "../../firebase/Config";
+import {
+  toDisplayTemperature,
+  toStoredTemperature,
+  useTemperatureUnit,
+} from "../../utils/temperature";
 import "./TanksPage.css";
 
 const emptyTank = {
@@ -25,6 +30,24 @@ function TanksPage({
   const [newTank, setNewTank] = useState(emptyTank);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const { unit, symbol } = useTemperatureUnit();
+  const [formUnit, setFormUnit] = useState(unit);
+
+  // If the unit is switched while the form is open, convert the typed value
+  // so it keeps meaning the same temperature.
+  if (formUnit !== unit) {
+    setFormUnit(unit);
+    if (newTank.temperature !== "") {
+      const fahrenheit = toStoredTemperature(
+        Number(newTank.temperature),
+        formUnit,
+      );
+      setNewTank({
+        ...newTank,
+        temperature: String(toDisplayTemperature(fahrenheit, unit)),
+      });
+    }
+  }
 
   function handleTankChange(event) {
     setNewTank({ ...newTank, [event.target.name]: event.target.value });
@@ -40,7 +63,7 @@ function TanksPage({
         name: newTank.name.trim(),
         type: newTank.type.trim(),
         gallons: Number(newTank.gallons),
-        temperature: Number(newTank.temperature),
+        temperature: toStoredTemperature(Number(newTank.temperature), unit),
         ph: Number(newTank.ph),
         ammonia: Number(newTank.ammonia),
         status: "Normal",
@@ -116,7 +139,7 @@ function TanksPage({
                 />
               </label>
               <label>
-                Temperature (°F)
+                Temperature ({symbol})
                 <input
                   name="temperature"
                   step="0.1"

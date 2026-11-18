@@ -1,10 +1,17 @@
+import {
+  toDisplayTemperature,
+  useTemperatureUnit,
+} from "../../../utils/temperature";
+
 const readingFields = [
-  { key: "temperature", label: "Temperature", unit: "°F" },
+  { key: "temperature", label: "Temperature", isTemperature: true },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];
 
 function Monitoring({ tank }) {
+  const { unit, symbol } = useTemperatureUnit();
+
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -17,8 +24,12 @@ function Monitoring({ tank }) {
         {readingFields.map((reading) => (
           <article className="reading-card" key={reading.key}>
             <p>{reading.label}</p>
-            <strong>{tank[reading.key]}</strong>
-            <span>{reading.unit}</span>
+            <strong>
+              {reading.isTemperature
+                ? toDisplayTemperature(tank[reading.key], unit)
+                : tank[reading.key]}
+            </strong>
+            <span>{reading.isTemperature ? symbol : reading.unit}</span>
           </article>
         ))}
       </div>
