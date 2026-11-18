@@ -2,36 +2,118 @@
 import { jest, describe, test, expect, beforeEach, afterEach } from "@jest/globals";
 import worker from "./index.js";
 
+const BASE_URL = "https://aquaguard.test";
+
+// Sample tank readings used throughout the tests.
+// Temperatures are stored in Fahrenheit.
+const testTank = {
+  id: "tank-1",
+  name: "Test Tank",
+  type: "Freshwater",
+  gallons: 20,
+  status: "normal",
+  temperature: 77,
+  ph: 7.2,
+  ammonia: 0,
+};
+
+// Creates a fake Firebase token for testing.
+// These tokens are not cryptographically valid and should never
+// be treated as proof that production authentication is secure.
+function createMockToken(userId = "test-user") {
+  return `header.${btoa(JSON.stringify({ user_id: userId }))}.signature`;
+}
+
+// Builds requests for the Worker endpoints.
+// Keeps the URL, headers, and request body consistent across tests.
+function createRequest(path, { method = "GET", token, body } = {}) {
+  const headers = {};
+
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  // Only include the authorization header when a token is supplied.
+  if (token != null) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return new Request(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+}
+
+// Creates a standard chat request using sample aquarium data.
+// Tests can override the token or body to simulate invalid requests.
+function createChatRequest({
+  token = createMockToken(),
+  body = {
+    message: "How is my aquarium?",
+    tank: testTank,
+  },
+} = {}) {
+  return createRequest("/chat", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+// Mocks the Firestore lookup used to check user approval.
+// This allows us to test approved and unapproved users
+// without connecting to a live Firebase database.
+function mockUserApproval(approved) {
+  globalThis.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      fields: {
+        approved: { booleanValue: approved },
+      },
+    }),
+  });
+}
+
+// Creates a mock Cloudflare environment with AI and analytics bindings.
+// Each test can control the AI response without calling the real model.
+function createEnvironment(aiResponse) {
+  return {
+    AQUAGUARD_SYSTEM_PROMPT: "You are an aquarium assistant.",
+    AI: {
+      run: jest.fn().mockResolvedValue(aiResponse),
+    },
+    AI_USAGE: {
+      writeDataPoint: jest.fn(),
+    },
+  };
+}
+
 describe("AquaGuard AI Worker", () => {
   let originalFetch;
 
+  // Save the original fetch function before each test.
   beforeEach(() => {
     originalFetch = globalThis.fetch;
   });
 
+  // Restore fetch and clear mocks so tests do not affect each other.
   afterEach(() => {
     globalThis.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 
+  // Verify that the health endpoint responds successfully.
   test("health endpoint returns OK", async () => {
-    const request = new Request("https://aquaguard.test/health");
-
-    const response = await worker.fetch(request, {});
+    const response = await worker.fetch(createRequest("/health"), {});
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "ok" });
   });
 
+  // Requests without an authorization token should be rejected.
   test("chat rejects requests without an authorization token", async () => {
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: "How is my aquarium?",
-        tank: { name: "Test Tank" },
-      }),
-    });
+    const request = createChatRequest({ token: null });
 
     const response = await worker.fetch(request, {});
 
@@ -39,18 +121,9 @@ describe("AquaGuard AI Worker", () => {
     expect(await response.json()).toEqual({ error: "Unauthorized" });
   });
 
+  // A malformed token should not be accepted as a valid user identity.
   test("chat rejects malformed tokens", async () => {
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer invalid-token",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "How is my aquarium?",
-        tank: { name: "Test Tank" },
-      }),
-    });
+    const request = createChatRequest({ token: "invalid-token" });
 
     const response = await worker.fetch(request, {});
 
@@ -58,37 +131,19 @@ describe("AquaGuard AI Worker", () => {
     expect(await response.json()).toEqual({ error: "Invalid token" });
   });
 
+  // Verify that requests to unsupported endpoints return 404.
   test("unknown endpoints return 404", async () => {
-    const request = new Request("https://aquaguard.test/unknown");
-
-    const response = await worker.fetch(request, {});
+    const response = await worker.fetch(createRequest("/unknown"), {});
 
     expect(response.status).toBe(404);
   });
 
+  // Simulate a user who exists in Firestore but is not approved.
+  // The Worker should deny access before calling the AI model.
   test("chat rejects users who are not approved", async () => {
-    const token = `header.${btoa(JSON.stringify({ user_id: "test-user" }))}.signature`;
+    mockUserApproval(false);
 
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        fields: { approved: { booleanValue: false } },
-      }),
-    });
-
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "How is my tank?",
-        tank: { name: "Test Tank" },
-      }),
-    });
-
-    const response = await worker.fetch(request, {});
+    const response = await worker.fetch(createChatRequest(), {});
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
@@ -96,25 +151,12 @@ describe("AquaGuard AI Worker", () => {
     });
   });
 
+  // Chat requests must include a message before AI processing begins.
   test("chat rejects requests with missing messages", async () => {
-    const token = `header.${btoa(JSON.stringify({ user_id: "test-user" }))}.signature`;
+    mockUserApproval(true);
 
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        fields: { approved: { booleanValue: true } },
-      }),
-    });
-
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tank: { name: "Test Tank" },
-      }),
+    const request = createChatRequest({
+      body: { tank: { name: "Test Tank" } },
     });
 
     const response = await worker.fetch(request, {});
@@ -125,25 +167,13 @@ describe("AquaGuard AI Worker", () => {
     });
   });
 
+  // Chat requests must include tank information so the AI
+  // has the aquarium context needed to generate guidance.
   test("chat rejects requests without tank details", async () => {
-    const token = `header.${btoa(JSON.stringify({ user_id: "test-user" }))}.signature`;
+    mockUserApproval(true);
 
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        fields: { approved: { booleanValue: true } },
-      }),
-    });
-
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "How is my tank?",
-      }),
+    const request = createChatRequest({
+      body: { message: "How is my tank?" },
     });
 
     const response = await worker.fetch(request, {});
@@ -154,110 +184,50 @@ describe("AquaGuard AI Worker", () => {
     });
   });
 
+  // Simulate a successful request from an approved user.
+  // The AI response is mocked so the test remains predictable.
   test("chat returns an AI response for an approved user", async () => {
-    const token = `header.${btoa(JSON.stringify({ user_id: "test-user" }))}.signature`;
+    mockUserApproval(true);
 
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        fields: { approved: { booleanValue: true } },
-      }),
-    });
-
-    const env = {
-      AQUAGUARD_SYSTEM_PROMPT: "You are an aquarium assistant.",
-      AI: {
-        run: jest.fn().mockResolvedValue({
-          choices: [
-            { message: { content: "Your aquarium looks healthy." } },
-          ],
-        }),
-      },
-      AI_USAGE: {
-        writeDataPoint: jest.fn(),
-      },
-    };
-
-    const request = new Request("https://aquaguard.test/chat", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "How is my aquarium?",
-        tank: {
-          id: "tank-1",
-          name: "Test Tank",
-          type: "Freshwater",
-          gallons: 20,
-          status: "normal",
-          temperature: 77,
-          ph: 7.2,
-          ammonia: 0,
+    const env = createEnvironment({
+      choices: [
+        {
+          message: {
+            content: "Your aquarium looks healthy.",
+          },
         },
-      }),
+      ],
     });
 
-    const response = await worker.fetch(request, env);
+    const response = await worker.fetch(createChatRequest(), env);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       response: "Your aquarium looks healthy.",
     });
+
+    // Confirm that the Worker called the AI model exactly once.
     expect(env.AI.run).toHaveBeenCalledTimes(1);
+
+    // Check the information sent to the AI, not just its response.
+    // Temperature must be labeled in Fahrenheit to match stored readings.
     const aiRequest = env.AI.run.mock.calls[0][1];
 
-expect(aiRequest.messages[0].content).toContain(
-  "Temperature: 77 °F"
-);
+    expect(aiRequest.messages[0].content).toContain(
+      "Temperature: 77 °F"
+    );
   });
 
-test("chat handles an empty AI response", async () => {
-  const token = `header.${btoa(JSON.stringify({ user_id: "test-user" }))}.signature`;
+  // An empty AI response should produce an error rather than
+  // appearing to be a successful chat response.
+  test("chat handles an empty AI response", async () => {
+    mockUserApproval(true);
 
-  globalThis.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
-      fields: { approved: { booleanValue: true } },
-    }),
+    const env = createEnvironment({ response: "" });
+
+    const response = await worker.fetch(createChatRequest(), env);
+
+    expect(response.status).toBe(502);
+    expect((await response.json()).error).toBeTruthy();
   });
-
-  const env = {
-    AQUAGUARD_SYSTEM_PROMPT: "You are an aquarium assistant.",
-    AI: {
-      run: jest.fn().mockResolvedValue({ response: "" }),
-    },
-    AI_USAGE: {
-      writeDataPoint: jest.fn(),
-    },
-  };
-
-  const request = new Request("https://aquaguard.test/chat", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: "How is my aquarium?",
-      tank: {
-        id: "tank-1",
-        name: "Test Tank",
-        type: "Freshwater",
-        gallons: 20,
-        status: "normal",
-        temperature: 77,
-        ph: 7.2,
-        ammonia: 0,
-      },
-    }),
-  });
-
-  const response = await worker.fetch(request, env);
-
-  expect(response.status).toBe(502);
-  expect((await response.json()).error).toBeTruthy();
-});
-
 });
