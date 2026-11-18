@@ -112,3 +112,46 @@ test("shows an empty state and reports a failed save", async () => {
     await screen.findByText("AquaGuard could not add this tank."),
   ).toBeInTheDocument();
 });
+
+test("switches to Celsius and still saves the temperature in Fahrenheit", async () => {
+  const user = userEvent.setup();
+  const { TemperatureUnitProvider } = require("../../utils/temperature.jsx");
+  window.localStorage.clear();
+  firestore.addDoc.mockResolvedValueOnce({ id: "tank-3" });
+  render(
+    <TemperatureUnitProvider>
+      <TanksPage
+        currentUser={currentUser}
+        onSelectTank={jest.fn()}
+        onSignOut={jest.fn()}
+        tanks={[tank]}
+      />
+    </TemperatureUnitProvider>,
+  );
+
+  expect(screen.getByText("76°F")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "°C" }));
+  expect(screen.getByRole("button", { name: "°C" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.getByText("24.4°C")).toBeInTheDocument();
+  expect(window.localStorage.getItem("aquaguard.temperatureUnit")).toBe("C");
+
+  await user.click(screen.getByRole("button", { name: "Add Tank" }));
+  await user.type(screen.getByLabelText("Tank Name"), "Reef Tank");
+  await user.type(screen.getByLabelText("Tank Type"), "Saltwater");
+  await user.type(screen.getByLabelText("Gallons"), "40");
+  await user.type(screen.getByLabelText("Temperature (°C)"), "25");
+  await user.type(screen.getByLabelText("pH"), "8.2");
+  await user.type(screen.getByLabelText("Ammonia (ppm)"), "0");
+  await user.click(screen.getByRole("button", { name: "Add Tank" }));
+
+  await waitFor(() => {
+    expect(firestore.addDoc).toHaveBeenCalledWith(
+      { database: db, name: "tanks" },
+      expect.objectContaining({ name: "Reef Tank", temperature: 77 }),
+    );
+  });
+  window.localStorage.clear();
+});
