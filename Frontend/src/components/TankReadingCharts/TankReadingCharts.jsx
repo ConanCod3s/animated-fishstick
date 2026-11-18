@@ -1,8 +1,8 @@
-import { LineChart } from "@mui/x-charts/LineChart";
+﻿import { LineChart } from "@mui/x-charts/LineChart";
 import "./TankReadingCharts.css";
 
 const chartDetails = [
-  { key: "temperature", label: "Temperature", unit: "°C" },
+  { key: "temperature", label: "Temperature", unit: "°F" },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];

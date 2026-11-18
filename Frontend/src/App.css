@@ -115,6 +115,36 @@
   background: transparent;
   cursor: pointer;
 }
+.assistant-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.assistant-tabs button {
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.assistant-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--teal);
+  color: var(--teal);
+  font-weight: 700;
+}
+.escalation-confirmation {
+  margin-top: 12px;
+}
+.escalation-confirmation button {
+  margin: 0 8px 8px 0;
+}
+.ticket-information p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
 @media (max-width: 900px) {
   .detail-grid {
     grid-template-columns: 1fr;
