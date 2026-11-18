@@ -19,6 +19,10 @@ Object.assign(mockDefaultExport, {
   serverTimestamp: jest.fn(() => "server-timestamp"),
   signInWithEmailAndPassword: jest.fn(),
   updateDoc: jest.fn(),
+  onSnapshot: jest.fn((reference, onNext) => {
+    onNext({ id: reference.id, exists: () => false });
+    return () => {};
+  }),
 });
 
 module.exports = mockDefaultExport;

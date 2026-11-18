@@ -34,7 +34,9 @@ test("shows tank details and selects a tank to manage", async () => {
     />,
   );
 
-  expect(screen.getByRole("heading", { name: "All tanks" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "All tanks" }),
+  ).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: "Community Tank" }),
   ).toBeInTheDocument();
@@ -112,3 +114,4 @@ test("shows an empty state and reports a failed save", async () => {
     await screen.findByText("AquaGuard could not add this tank."),
   ).toBeInTheDocument();
 });
+
