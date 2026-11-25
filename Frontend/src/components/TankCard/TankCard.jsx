@@ -1,6 +1,11 @@
+import {
+  toDisplayTemperature,
+  useTemperatureUnit,
+} from "../../utils/temperature";
 import "./TankCard.css";
 
 function TankCard({ currentUser, onSelect, tank }) {
+  const { unit, symbol } = useTemperatureUnit();
   const isOwner = currentUser.uid === tank.ownerId;
   const statusClass =
     tank.status === "Warning" ? "status-warning" : "status-normal";
@@ -21,7 +26,10 @@ function TankCard({ currentUser, onSelect, tank }) {
         </div>
         <div>
           <dt>Temperature</dt>
-          <dd>{tank.temperature}°F</dd>
+          <dd>
+            {toDisplayTemperature(tank.temperature, unit)}
+            {symbol}
+          </dd>
         </div>
         <div>
           <dt>pH</dt>
@@ -34,7 +42,9 @@ function TankCard({ currentUser, onSelect, tank }) {
       </dl>
       <div className="tank-summary">
         Created On:{" "}
-        {new Date(tank.createdAt.seconds * 1000).toLocaleDateString()}
+        {tank.createdAt
+          ? new Date(tank.createdAt.seconds * 1000).toLocaleDateString()
+          : "Saving..."}
       </div>
       <button
         className="primary-button"

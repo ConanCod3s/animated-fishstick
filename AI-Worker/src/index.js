@@ -150,8 +150,7 @@ export default {
         if (!decision)
           return jsonResponse(
             {
-              error:
-                "AquaGuard returned an invalid response.",
+              error: "AquaGuard returned an invalid response.",
             },
             502,
           );

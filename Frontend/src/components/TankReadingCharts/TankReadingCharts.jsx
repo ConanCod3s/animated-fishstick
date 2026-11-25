@@ -1,13 +1,18 @@
 ﻿import { LineChart } from "@mui/x-charts/LineChart";
+import {
+  toDisplayTemperature,
+  useTemperatureUnit,
+} from "../../utils/temperature";
 import "./TankReadingCharts.css";
 
 const chartDetails = [
-  { key: "temperature", label: "Temperature", unit: "°F" },
+  { key: "temperature", label: "Temperature", isTemperature: true },
   { key: "ph", label: "pH", unit: "" },
   { key: "ammonia", label: "Ammonia", unit: "ppm" },
 ];
 
 function TankReadingCharts({ readingHistory }) {
+  const { unit, symbol } = useTemperatureUnit();
   const timeLabels = readingHistory.map((reading) =>
     new Date(reading.recordedAt).toLocaleTimeString([], {
       hour: "numeric",
@@ -28,13 +33,20 @@ function TankReadingCharts({ readingHistory }) {
         {chartDetails.map((chart) => (
           <article className="reading-chart" key={chart.key}>
             <h3>
-              {chart.label} {chart.unit && `(${chart.unit})`}
+              {chart.label}{" "}
+              {chart.isTemperature
+                ? `(${symbol})`
+                : chart.unit && `(${chart.unit})`}
             </h3>
             <LineChart
               xAxis={[{ data: timeLabels, scaleType: "point" }]}
               series={[
                 {
-                  data: readingHistory.map((reading) => reading[chart.key]),
+                  data: readingHistory.map((reading) =>
+                    chart.isTemperature
+                      ? toDisplayTemperature(reading[chart.key], unit)
+                      : reading[chart.key],
+                  ),
                   label: chart.label,
                   showMark: true,
                 },

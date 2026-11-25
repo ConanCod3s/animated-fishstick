@@ -29,6 +29,32 @@
   background: transparent;
   cursor: pointer;
 }
+.unit-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #83b5b9;
+  border-radius: 8px;
+}
+.unit-option {
+  padding: 6px 10px;
+  border: 0;
+  color: #fff;
+  font: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.unit-option + .unit-option {
+  border-left: 1px solid #83b5b9;
+}
+.unit-option.active {
+  color: #0d5960;
+  font-weight: 700;
+  background: #fff;
+}
+.unit-option:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
 @media (max-width: 620px) {
   .app-header {
     align-items: flex-start;

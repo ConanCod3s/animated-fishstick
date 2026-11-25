@@ -22,14 +22,20 @@ function useAIChat({ tank, currentUser }) {
 
   useEffect(() => {
     // Read only this tank's ticket while its detail page is open.
-    return onSnapshot(doc(db, "supportTickets", tank.id), (snapshot) => {
-      setSupportTicket(snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } : null);
-      setTicketLoading(false);
-      setTicketError("");
-    }, () => {
-      setTicketLoading(false);
-      setTicketError("This tank's ticket could not be loaded.");
-    });
+    return onSnapshot(
+      doc(db, "supportTickets", tank.id),
+      (snapshot) => {
+        setSupportTicket(
+          snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } : null,
+        );
+        setTicketLoading(false);
+        setTicketError("");
+      },
+      () => {
+        setTicketLoading(false);
+        setTicketError("This tank's ticket could not be loaded.");
+      },
+    );
   }, [tank.id]);
   async function handleChatSubmit(event) {
     event.preventDefault();
