@@ -42,7 +42,9 @@ function TankCard({ currentUser, onSelect, tank }) {
       </dl>
       <div className="tank-summary">
         Created On:{" "}
-        {new Date(tank.createdAt.seconds * 1000).toLocaleDateString()}
+        {tank.createdAt
+          ? new Date(tank.createdAt.seconds * 1000).toLocaleDateString()
+          : "Saving..."}
       </div>
       <button
         className="primary-button"
