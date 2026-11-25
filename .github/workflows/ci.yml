@@ -43,3 +43,12 @@ jobs:
 
       - name: Validate Worker bundle
         run: npm --prefix AI-Worker run check
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: |
+            Frontend/coverage/
+            Backend-JavaScript/coverage/
