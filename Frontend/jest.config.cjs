@@ -1,6 +1,6 @@
 module.exports = {
   testEnvironment: "jsdom",
-    testMatch: [
+  testMatch: [
     "<rootDir>/src/pages/**/*.test.cjs",
     "<rootDir>/src/components/**/*.test.cjs",
   ],
@@ -16,7 +16,7 @@ module.exports = {
     ],
   },
   moduleNameMapper: {
-    "^(?:\\.\\./\\.\\./firebase/Config|\\.\\./\\.\\./utils/constants|\\.\\./\\.\\./components/TankReadingCharts/TankReadingCharts|firebase/auth|firebase/firestore|.*\\.css)$":
+    "^(?:(?:\\.\\./)+(?:firebase/Config|utils/constants|components/TankReadingCharts/TankReadingCharts)|firebase/auth|firebase/firestore|.*\\.css)$":
       "<rootDir>/src/test/mocks.cjs",
   },
   setupFilesAfterEnv: ["@testing-library/jest-dom"],

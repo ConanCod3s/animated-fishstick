@@ -32,6 +32,18 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
     }
 
+    match /supportTickets/{tankId} {
+      allow read: if isApproved();
+
+      allow create: if isApproved()
+        && request.resource.data.tankId == tankId
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && get(/databases/$(database)/documents/tanks/$(tankId)).data.ownerId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
