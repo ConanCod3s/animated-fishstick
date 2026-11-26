@@ -65,12 +65,28 @@ function createChatRequest({
 // This allows us to test approved and unapproved users
 // without connecting to a live Firebase database.
 function mockUserApproval(approved) {
-  globalThis.fetch = jest.fn().mockResolvedValue({
+  globalThis.fetch = jest.fn().mockResolvedValueOnce({
     ok: true,
     json: async () => ({
       fields: {
         approved: { booleanValue: approved },
       },
+    }),
+  });
+}
+
+function mockTankRead() {
+  globalThis.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({
+      fields: Object.fromEntries(
+        Object.entries(testTank).map(([key, value]) => [
+          key,
+          typeof value === "number"
+            ? { doubleValue: value }
+            : { stringValue: value },
+        ]),
+      ),
     }),
   });
 }
@@ -188,12 +204,17 @@ describe("AquaGuard AI Worker", () => {
   // The AI response is mocked so the test remains predictable.
   test("chat returns an AI response for an approved user", async () => {
     mockUserApproval(true);
+    mockTankRead();
 
     const env = createEnvironment({
       choices: [
         {
           message: {
-            content: "Your aquarium looks healthy.",
+            content: JSON.stringify({
+              response: "Your aquarium looks healthy.",
+              escalation: "none",
+              reason: "",
+            }),
           },
         },
       ],
@@ -204,6 +225,7 @@ describe("AquaGuard AI Worker", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       response: "Your aquarium looks healthy.",
+      escalationUnavailable: false,
     });
 
     // Confirm that the Worker called the AI model exactly once.
@@ -222,6 +244,7 @@ describe("AquaGuard AI Worker", () => {
   // appearing to be a successful chat response.
   test("chat handles an empty AI response", async () => {
     mockUserApproval(true);
+    mockTankRead();
 
     const env = createEnvironment({ response: "" });
 
