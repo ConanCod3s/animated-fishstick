@@ -36,7 +36,9 @@ jobs:
         run: |
           npm --prefix Frontend test
           npm --prefix Backend-JavaScript test
+          npm --prefix AI-Worker test
           npm --prefix Frontend run lint
+          npm --prefix Backend-JavaScript run lint
 
       - name: Build frontend
         run: npm --prefix Frontend run build
